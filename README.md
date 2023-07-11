@@ -21,3 +21,5 @@ Você pode ter acesso ao Kafdrop fazendo um acesso via navegador no endereço ht
 A aplicação segue a seguinte arquitetura:
 
 ![arquitetura](docs/arquitetura.png)
+
+![docker-compose](docs/docker-compose.png)
