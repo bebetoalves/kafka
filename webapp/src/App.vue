@@ -1,13 +1,13 @@
 <template>
-  <main class="flex flex-col mb-10">
-    <div class="bg-blue-900 py-4 border-b-2 border-yellow-500 shadow-md">
+  <main class="flex flex-col mb-14">
+    <div class="bg-blue-900 py-4 border-b-2 border-yellow-500 shadow-md mb-14">
       <div class="px-4 container mx-auto">
         <h3 class="text-white font-display font-bold text-2xl">WebApp</h3>
       </div>
     </div>
 
     <section class="container mx-auto p-4">
-      <div class="grid grid-cols-2 grid-rows-1 gap-4">
+      <div class="grid grid-cols-2 grid-rows-1 gap-14">
         <div class="bg-white p-4 rounded-lg shadow">
           <SensorChart title="Heat Sensor" color="#f43f5e" :data="state.heat" />
         </div>

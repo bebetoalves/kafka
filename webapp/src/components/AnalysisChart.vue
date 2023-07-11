@@ -1,53 +1,24 @@
 <template>
-  <LineChart v-bind="lineChartProps" />
+  <Line :data="data" :options="options" />
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue';
+  import { ref, watch } from 'vue';
   import { Analysis } from '../types';
-  import { LineChart, useLineChart } from 'vue-chart-3';
-  import { ChartData } from 'chart.js';
+  import { Line } from 'vue-chartjs';
+  import { ChartData, ChartOptions } from 'chart.js';
+  import { format } from 'date-fns';
 
   const props = defineProps<{ data: Analysis }>();
 
-  const dataLabels = ref<number[]>([]);
-  const dataMinValue = ref<number[]>([]);
-  const dataMaxValue = ref<number[]>([]);
-  const dataAvgValue = ref<number[]>([]);
+  const dataLabels = <number[]>[];
+  const dataMinValue = <number[]>[];
+  const dataMaxValue = <number[]>[];
+  const dataAvgValue = <number[]>[];
 
-  const data = computed<ChartData<'line'>>(() => ({
-    labels: dataLabels.value,
-    datasets: [
-      {
-        label: 'Min',
-        data: dataMinValue.value,
-        borderColor: '#0ea5e9',
-        fill: false,
-      },
-      {
-        label: 'Max',
-        data: dataMaxValue.value,
-        borderColor: '#ef4444',
-        fill: false,
-      },
-      {
-        label: 'Avg',
-        data: dataAvgValue.value,
-        borderColor: '#22c55e',
-        fill: false,
-      },
-    ],
-  }));
+  const data = ref<ChartData<'line'>>({ labels: [], datasets: [] });
 
-  const options = {
-    scales: {
-      x: {
-        type: 'time',
-        time: {
-          tooltipFormat: 'HH:mm:ss',
-        },
-      },
-    },
+  const options = <ChartOptions<'line'>>{
     responsive: true,
     plugins: {
       legend: {
@@ -58,27 +29,73 @@
         text: 'Analysis',
       },
     },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          tooltipFormat: 'HH:mm:ss',
+        },
+        title: {
+          display: true,
+          text: 'Time',
+        },
+        ticks: {
+          callback: function (value: number) {
+            return format(new Date(value * 1000), 'HH:mm:ss');
+          },
+          autoSkip: true,
+          maxTicksLimit: 20,
+        },
+      },
+    },
   };
-
-  const { lineChartProps } = useLineChart({
-    chartData: data,
-    options,
-  });
 
   watch(
     () => props.data,
     (newValue: Analysis) => {
-      dataLabels.value.push(newValue.timestamp);
-      dataMinValue.value.push(newValue.min);
-      dataMaxValue.value.push(newValue.max);
-      dataAvgValue.value.push(newValue.avg);
+      let removedOldData = false;
 
-      if (dataLabels.value.length > 10) {
-        dataLabels.value.shift();
-        dataMinValue.value.shift();
-        dataMaxValue.value.shift();
-        dataAvgValue.value.shift();
+      if (dataMinValue.length >= 30) {
+        dataMinValue.shift();
+        dataMaxValue.shift();
+        dataAvgValue.shift();
+        removedOldData = true;
       }
+
+      if (removedOldData) {
+        dataLabels.shift();
+      }
+
+      dataLabels.push(newValue.timestamp);
+      dataMinValue.push(newValue.min);
+      dataMaxValue.push(newValue.max);
+      dataAvgValue.push(newValue.avg);
+
+      const newData = () => ({
+        labels: dataLabels,
+        datasets: [
+          {
+            label: 'Min',
+            data: dataMinValue,
+            borderColor: '#0ea5e9',
+            fill: false,
+          },
+          {
+            label: 'Max',
+            data: dataMaxValue,
+            borderColor: '#ef4444',
+            fill: false,
+          },
+          {
+            label: 'Avg',
+            data: dataAvgValue,
+            borderColor: '#22c55e',
+            fill: false,
+          },
+        ],
+      });
+
+      data.value = newData();
     },
   );
 </script>

@@ -1,36 +1,22 @@
 <template>
-  <LineChart v-bind="lineChartProps" />
+  <Line :data="data" :options="options" />
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue';
+  import { ref, watch } from 'vue';
+  import { Line } from 'vue-chartjs';
+  import { ChartData, ChartOptions } from 'chart.js';
   import { Sensor } from '../types';
-  import { LineChart, useLineChart } from 'vue-chart-3';
-  import { ChartData } from 'chart.js';
+  import { format } from 'date-fns';
 
   const props = defineProps<{ title: string; color: string; data: Sensor }>();
 
-  let dataValues = ref<number[]>([]);
-  let dataLabels = ref<number[]>([]);
+  let dataValues = <number[]>[];
+  let dataLabels = <number[]>[];
 
-  const data = computed<ChartData<'line'>>(() => ({
-    labels: dataLabels.value,
-    datasets: [
-      {
-        label: 'Values',
-        data: dataValues.value,
-        borderColor: props.color,
-        fill: false,
-      },
-    ],
-  }));
+  const data = ref<ChartData<'line'>>({ datasets: [] });
 
-  const options = {
-    scales: {
-      x: {
-        type: 'time',
-      },
-    },
+  const options = <ChartOptions<'line'>>{
     responsive: true,
     plugins: {
       legend: {
@@ -41,23 +27,54 @@
         text: props.title,
       },
     },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          tooltipFormat: 'HH:mm:ss',
+        },
+        title: {
+          display: true,
+          text: 'Time',
+        },
+        ticks: {
+          callback: function (value: number) {
+            return format(new Date(value * 1000), 'HH:mm:ss');
+          },
+        },
+      },
+    },
   };
-
-  const { lineChartProps } = useLineChart({
-    chartData: data,
-    options,
-  });
 
   watch(
     () => props.data,
     (newValue: Sensor) => {
-      dataLabels.value.push(newValue.timestamp);
-      dataValues.value.push(newValue.value);
+      let removedOldData = false;
 
-      if (dataLabels.value.length > 10) {
-        dataLabels.value.shift();
-        dataValues.value.shift();
+      if (dataValues.length >= 10) {
+        dataValues.shift();
+        removedOldData = true;
       }
+
+      if (removedOldData) {
+        dataLabels.shift();
+      }
+
+      dataLabels.push(newValue.timestamp);
+      dataValues.push(newValue.value);
+
+      const newData = () => ({
+        labels: dataLabels,
+        datasets: [
+          {
+            label: 'Values',
+            data: dataValues,
+            borderColor: props.color,
+          },
+        ],
+      });
+
+      data.value = newData();
     },
   );
 </script>
