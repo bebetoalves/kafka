@@ -5,8 +5,8 @@ services:
     networks:
       - kafka
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -17,9 +17,9 @@ services:
     ports:
       - 9092:9092
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
 
   sensor:
     stop_signal: SIGINT
@@ -28,7 +28,7 @@ services:
     depends_on:
       - kafka
     environment:
-      KAFKA_BROKER: kafka:29092
+      - KAFKA_BROKER=kafka:29092
     networks:
       - kafka
 
@@ -40,7 +40,7 @@ services:
       - kafka
       - sensor
     environment:
-      KAFKA_BROKER: kafka:29092
+      - KAFKA_BROKER=kafka:29092
     networks:
       - kafka
 
@@ -57,14 +57,14 @@ services:
       - analyzer
       - sensor
     environment:
-      KAFKA_BROKER: kafka:29092
+      - KAFKA_BROKER=kafka:29092
     networks:
       - kafka
 
   webapp:
     build: ./webapp
     volumes:
-      - .:/webapp
+      - ./webapp:/webapp
     ports:
       - '3000:3000'
     depends_on:
