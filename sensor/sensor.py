@@ -32,8 +32,8 @@ class Sensor:
 
 
 if __name__ == "__main__":
-    heat = Sensor("heat", 20, 30)
-    humidity = Sensor("humidity", 40, 60)
+    heat = Sensor("heat", -100, 100)
+    humidity = Sensor("humidity", 0, 80)
 
     heat_thread = threading.Thread(target=heat.produce)
     humidity_thread = threading.Thread(target=humidity.produce)
