@@ -1,20 +1,55 @@
-from typing import List
-from confluent_kafka import Consumer, Producer
+import os
 import json
+from collections import deque
+from time import sleep
+import time
+from confluent_kafka import Consumer, Producer
+from loguru import logger
 
-def analyze_sensor_data(data: List[str]) -> dict:
-    # Este método é responsável por tratar os dados que estão no tópico do Kafka.
-    # A mensagem chegará dessa forma: ['{"nome": "Sensor X", "leitura": 0}', '{"nome": "Sensor Y", "leitura": 1}']
-    # Você então deverá fazer um "parse" dessas mensagens e criar uma nova mensagem.
-    # O formato da nova mensagem deverá ser, por exemplo: {"min": 0, "max": 1, "media": "0.5"}
+if __name__ == "__main__":
+    bootstrap_servers = os.environ.get("KAFKA_BROKER")
+    consumer = Consumer(
+        {
+            "bootstrap.servers": bootstrap_servers,
+            "group.id": "analyzer",
+            "auto.offset.reset": "earliest",
+        }
+    )
+    producer = Producer({"bootstrap.servers": bootstrap_servers})
+    message_queue = deque(maxlen=5)
 
-def delivery_report(err, msg) -> None:
-    # Este método deverá ser usado para imprimir se houve erro no envio da mensagem ou sucesso (exibir a mensagem enviada).
+    consumer.subscribe(["heat", "humidity"])
 
-def process_sensor_data() -> None:
-    # Este método fará duas operações: Consumir e Produzir.
-    # Ele irá consumir as mensagens geradas pelo sensor (use o método analyze_sensor_data() para tratar essas mensagens).
-    # Ele também irá produzir mensagens com a análise feita, use o tópico "analises".
-    # Use como callback do Producer o método delivery_report()
+    while True:
+        message = consumer.poll(1.0)
 
-process_sensor_data()
+        if message is None:
+            continue
+
+        if message.error():
+            logger.error(message.error())
+            continue
+
+        value = json.loads(message.value().decode("utf-8"))
+        value = value["value"]
+
+        message_queue.append(value)
+
+        if len(message_queue) == message_queue.maxlen:
+            min_value = min(message_queue)
+            max_value = max(message_queue)
+            avg_value = sum(message_queue) / len(message_queue)
+
+            result = {
+                "min": min_value,
+                "max": max_value,
+                "avg": avg_value,
+                "timestamp": int(time.time()),
+            }
+
+            logger.info(result)
+
+            producer.produce("analysis", value=json.dumps(result).encode("utf-8"))
+            producer.flush()
+
+        sleep(1)
