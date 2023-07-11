@@ -14,7 +14,7 @@ docker-compose up -d --build
 
 Kafdrop é uma interface web para visualização de tópicos Kafka e navegação em grupos de consumidores. A ferramenta exibe informações como corretores, tópicos, partições, consumidores e permite visualizar mensagens.
 
-Você pode ter acesso ao Kafdrop fazendo um acesso via navegador no endereço http://localhost:19000.
+Você pode ter acesso ao Kafdrop fazendo um acesso via navegador no endereço <http://localhost:19000>.
 
 ## Arquitetura
 
